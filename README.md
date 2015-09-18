@@ -22,6 +22,7 @@ Currently the plugin supports array, hstore and json fields as well as some quer
         * [Is Empty or Contains](#is-empty-or-contains)
         * [Equals](#equals)
         * [Not Equals](#not-equals)
+        * [Ilike](#ilike)
   * [Hstore](#hstore)
     * [Grails 2.2.5 and 2.3.1+](#grails-225-and-231)
     * [Old Grails versions](#old-grails-versions)
@@ -30,10 +31,12 @@ Currently the plugin supports array, hstore and json fields as well as some quer
         * [Contains Key](#contains-key)
         * [Contains](#contains)
         * [Is Contained](#is-contained)
+        * [ILike Value](#ilike-value)
   * [JSON](#json)
     * [Criterias](#criterias)
         * [Has field value](#has-field-value)
   * [JSONB](#jsonb)
+  * [Order](#order)
 * [Authors](#authors)
 * [Release Notes](#release-notes)
 
@@ -291,6 +294,20 @@ def result = Like.withCriteria {
 }
 ```
 
+#### ILike
+
+With this criteria you can get all the rows that are ilike to a value. To use it just use the new criteria `pgArrayILike`.
+
+It only can be used on arrays of string.
+
+It uses the ilike syntaxis, so you can do for example:
+
+```groovy
+def result = Like.withCriteria {
+    pgArrayILike 'favoriteMovies', "%tarwar%"
+}
+```
+
 
 ### Hstore
 
@@ -446,6 +463,16 @@ testAttributes = ["1" : "a", "2" : "b"]
 ```
 This criteria can also be used to look for exact matches
 
+##### ILike Value
+
+With this operation you can search for rows that contains an Hstore in which any value matches (ilike) to the parameter. It uses the ilike syntaxis, so you can do for example:
+
+```groovy
+def wantedValue = "%my-value%"
+def result = MyDomain.withCriteria {
+    pgHstoreILikeValue "attributes", wantedKey
+}
+```
 
 ### JSON
 
@@ -535,6 +562,58 @@ class TestMapJsonb {
 The same criterias implemented for Json are valid for Jsonb.
 
 
+#### Order
+
+##### Random order
+
+Sometimes you need to get some results ordered randomly from the database. Postgres provides a native function to do
+that. So you can write something like this:
+
+```sql
+select * from foo order by random();
+```
+
+The plugin now offers a new order method to do this random sorting:
+
+```groovy
+import static net.kaleidos.hibernate.order.OrderByRandom.byRandom
+
+class MyService {
+    List<TestMapJsonb> orderByRandom() {
+        return TestMapJsonb.withCriteria {
+            order byRandom()
+        }
+    }
+}
+```
+
+##### Sql formula
+
+You may need to do a more complex sorting. Imagine that you have a table with a `jsonb` column and you want to order
+by a field in that json. Using sql you can write:
+
+```sql
+select * from foo order by (stats->'intensity') desc
+```
+
+With the plugin you can do the same with a new order method called `sqlFormula`:
+
+```groovy
+import static net.kaleidos.hibernate.order.OrderBySqlFormula.sqlFormula
+
+class MyService {
+    List<TestMapJsonb> orderByJson() {
+        return TestMapJsonb.withCriteria {
+            order sqlFormula("(data->'name') desc")
+        }
+    }
+}
+```
+
+It's important to note that the "raw" sql is appended to the criteria, so you need to be sure that it's valid because
+if not you'll get a sql error during runtime.
+
+
 Authors
 -------
 
@@ -549,6 +628,11 @@ Collaborations are appreciated :-)
 Release Notes
 -------------
 
+* 4.6.0 - 08/Sep/2015 - Hibernate 4.x. Add support to order by a sql formula and by random. Fix [#72](https://github.com/kaleidos/grails-postgresql-extensions/issues/72).
+* 4.5.0 - 02/Jun/2015 - Hibernate 4.x. GR8Conf Hackergarten! Merge PRs: [#62](https://github.com/kaleidos/grails-postgresql-extensions/pull/62),
+[#66](https://github.com/kaleidos/grails-postgresql-extensions/pull/66), [#67](https://github.com/kaleidos/grails-postgresql-extensions/pull/67),
+[#68](https://github.com/kaleidos/grails-postgresql-extensions/pull/68), [#69](https://github.com/kaleidos/grails-postgresql-extensions/pull/69)
+* 3.4.0 - 02/Jun/2015 - Hibernate 3.x. GR8Conf Hackergarten! Add Jsonb support for Hibernate 3.x [#64](https://github.com/kaleidos/grails-postgresql-extensions/issues/64)
 * 4.4.0 - 15/Mar/2015 - Hibernate 4.x. Add support for Jsonb.
 * 3.3.0 - 18/Aug/2014 - Hibernate 3.x. Fix [#49](https://github.com/kaleidos/grails-postgresql-extensions/issues/49). Configure sequence per table or a global sequence for all tables.
 * 4.3.0 - 17/Aug/2014 - Hibernate 4.x. Fix [#49](https://github.com/kaleidos/grails-postgresql-extensions/issues/49). Configure sequence per table or a global sequence for all tables.

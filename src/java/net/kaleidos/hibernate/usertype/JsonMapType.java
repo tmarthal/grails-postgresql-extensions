@@ -6,6 +6,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.usertype.UserType;
+import org.postgresql.util.PGobject;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -22,7 +23,7 @@ public class JsonMapType implements UserType {
 
     private final Type userType = Map.class;
 
-    private final Gson gson = new GsonBuilder().create();
+    private final Gson gson = new GsonBuilder().serializeNulls().create();
 
     @Override
     public int[] sqlTypes() {
@@ -46,7 +47,7 @@ public class JsonMapType implements UserType {
 
     @Override
     public Object nullSafeGet(ResultSet rs, String[] names, SessionImplementor session, Object owner) throws HibernateException, SQLException {
-        String jsonString = rs.getString(names[0]);
+        String jsonString = ((PGobject)rs.getObject(names[0])).getValue();
         return gson.fromJson(jsonString, userType);
     }
 
@@ -59,11 +60,11 @@ public class JsonMapType implements UserType {
         }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public Object deepCopy(Object value) throws HibernateException {
         if (value == null) {
-         return null;
+            return null;
         }
 
         Map m = (Map) value;

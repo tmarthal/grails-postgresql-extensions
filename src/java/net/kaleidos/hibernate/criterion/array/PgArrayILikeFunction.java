@@ -1,4 +1,4 @@
-package net.kaleidos.hibernate.criterion.hstore;
+package net.kaleidos.hibernate.criterion.array;
 
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -9,26 +9,25 @@ import org.hibernate.engine.spi.TypedValue;
 import org.hibernate.type.StringType;
 
 /**
- * Constrains a property in an hstore
+ * Constrains a value "ilike" in an array
  */
-public class PgHstoreValueFunction implements Criterion {
-    private static final long serialVersionUID = 2872183637309166619L;
+public class PgArrayILikeFunction implements Criterion {
 
-    protected final String propertyName;
-    protected final Object value;
-    protected final String function;
+    private static final long serialVersionUID = 7475136611436979257L;
 
-    protected PgHstoreValueFunction(String propertyName, Object value, String function) {
+    private final String propertyName;
+    private final String value;
+
+    protected PgArrayILikeFunction(String propertyName, String value) {
         this.propertyName = propertyName;
         this.value = value;
-        this.function = function;
     }
 
     @Override
     public String toSqlString(Criteria criteria, CriteriaQuery criteriaQuery) throws HibernateException {
         String[] columns = StringHelper.suffix(criteriaQuery.findColumns(propertyName, criteria), "");
         for (int i = 0; i < columns.length; i++) {
-            columns[i] = function + "(" + columns[i] + "," + "?)";
+            columns[i] = "text(" + columns[i] + ") ilike ?";
         }
         return StringHelper.join(" and ", columns);
     }
