@@ -28,5 +28,24 @@ class JsonCriterias {
 
             return addToCriteria(new PgJsonExpression(propertyName, jsonAttribute, propertyValue, "="))
         }
+    
+        /**
+         * Creates a "json does not have field value" Criterion based on the specified property name and value
+         * @param propertyName The property name (json field)
+         * @param jsonAttribute The json attribute
+         * @param propertyValue The property value
+         * @return A Criterion instance
+         */
+        HibernateCriteriaBuilder.metaClass.pgJsonDoesNotFieldValue = { String propertyName, String jsonAttribute, propertyValue ->
+            if (!validateSimpleExpression()) {
+                throwRuntimeException(new IllegalArgumentException("Call to [pgJsonDoesNotFieldValue] with propertyName [" +
+                    propertyName + "], jsonAttribute [" + jsonAttribute + "] and value [" + propertyValue + "] not allowed here."))
+            }
+
+            propertyName = calculatePropertyName(propertyName)
+            propertyValue = calculatePropertyValue(propertyValue)
+
+            return addToCriteria(new PgJsonExpression(propertyName, jsonAttribute, propertyValue, "!="))
+        }
     }
 }
